@@ -25,7 +25,7 @@ public class System {
 	DiskController controller;
 	Cache cache;
 
-	Disk diskToTest; // TODO: support multiple disks eventually
+	Disk diskToTest; // FUTURE: support multiple disks
 	SortedSet<File> files;
 
 	private Set<IoResponse> responses;

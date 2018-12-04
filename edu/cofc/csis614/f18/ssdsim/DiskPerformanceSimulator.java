@@ -134,8 +134,9 @@ public class DiskPerformanceSimulator {
 		SingleTrialResult result = new SingleTrialResult();
 		
 		while(isSomeFileOperationsStillOutstanding()) {
-			// TODO: Receive data coming back from earlier ops, and add to result? Or do this via pub-sub?
-			system.updateTime(time);
+			// FUTURE: Some kind of pub-sub setup for receiving/handling data coming back from earlier ops, and add to result
+			
+			system.updateTime(time); // Let components know time has moved forward so they can do anything that happens in the new time tick
 			
 			Queue<FileOperation> fileOperationsThisTimeTick = getFileOperationsThisTimeTick();
 			
@@ -146,7 +147,7 @@ public class DiskPerformanceSimulator {
 			time++;
 		}
 		
-		return result;
+		return result; // FIXME populate the result, probably by requesting it from system
 	}
 	
 	private static boolean isSomeFileOperationsStillOutstanding() {
@@ -169,11 +170,7 @@ public class DiskPerformanceSimulator {
 		return fileOperationsThisTimeTick;
 	}
 	
-	private static void addToDiskResults(SingleTrialResult latestResult) {
-		// FIXME
-	}
-	
 	private static void presentResults() {
-		// FIXME
+		java.lang.System.out.println("The disk simulator ran."); // FIXME display the actual results instead of debug text
 	}
 }
