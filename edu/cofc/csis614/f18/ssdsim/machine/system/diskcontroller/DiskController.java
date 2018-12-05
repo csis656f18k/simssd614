@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import edu.cofc.csis614.f18.ssdsim.FileOperation;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Disk;
 
@@ -21,9 +20,14 @@ public abstract class DiskController {
 	
 	public void updateTime(long timeIn) {
 		time = timeIn;
+        disk.updateTime(time);
+        
+        // TODO: do anything that happens here at time timeIn
 	}
 	
-	public abstract Set<? extends IoRequest> createIoRequestsForFileOperations(FileOperation fileOperation, long currentTime);
+	public abstract void setInitialDiskState();
+
+	public abstract void sendIoRequestToDisk(IoRequest ioRequest);
 
 	public void sendIoRequestsToDisk(Set<? extends IoRequest> ioRequests) {
 		for(IoRequest ioRequest : ioRequests) {

@@ -14,13 +14,18 @@ import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
 public abstract class Disk {
 	long time;
 	
+	boolean blocked;
+	long unblockTime;
+	
 	int diskCapacity;
 	int readLatency;
 	int writeLatency;
 	
 	SortedMap<Long, Set<IoResponse>> operationsInProgress;
 	int operationsInProgressCount;
+	
 	{
+	    blocked = false;
 		operationsInProgressCount = 0;
 	}
 	

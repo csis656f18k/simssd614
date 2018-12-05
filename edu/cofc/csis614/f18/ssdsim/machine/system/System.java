@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 
-import edu.cofc.csis614.f18.ssdsim.FileOperation;
-import edu.cofc.csis614.f18.ssdsim.FileOperationType;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Disk;
@@ -22,13 +20,13 @@ import edu.cofc.csis614.f18.ssdsim.machine.system.diskcontroller.SsdController;
 public class System {
 	private long time;
 	
+	Disk diskToTest;
 	DiskController controller;
+
 	Cache cache;
+	boolean useMemoization;
 
-	Disk diskToTest; // TODO: support multiple disks eventually
-	SortedSet<File> files;
-
-	private Set<IoResponse> responses;
+	//private Set<IoResponse> responses;
 
 	public System(Disk diskToTest) {
 		cache = new Cache();
@@ -47,36 +45,42 @@ public class System {
 		}
 	}
 	
+	public void setInitialDiskState() {
+		controller.setInitialDiskState();
+	}
+	
 	public void updateTime(long timeIn) {
 		time = timeIn;
 		controller.updateTime(time);
+		
 		// TODO: do anything that happens here at time timeIn
 	}
 	
-	public void loadFilesToDisk(List<File> files) {
-		for(File file : files) {
-			FileOperation fileOperation = new FileOperation(FileOperationType.WRITE, file, -1L);
-			
-			Set<? extends IoRequest> writeRequests = controller.createIoRequestsForFileOperations(fileOperation, -1L);
-			
-			controller.sendIoRequestsToDisk(writeRequests);
-		}
+	public void enableMemoization() {
+		useMemoization = true;
 	}
-
+	
+	public void disableMemoization() {
+		useMemoization = false;
+	}
+	
 	/**
-	 * <p>Will be called by the simulator for each simulated file operation.</p>
+	 * <p>Will be called by the simulator for each simulated operation.</p>
 	 * 
 	 * <p>Tells the disk controller how to make the operation happen.</p>
 	 * 
-	 * @param fileOperation
+	 * @param ioRequest
 	 */
-	public void handleFileOperationRequest(FileOperation fileOperation) {
-		// TODO: include logic for cache
-		// FIXME
+	public void handleIoRequest(IoRequest ioRequest) {
+		if(useMemoization) {
+			// TODO: include logic for cache
+		}
+		
+		controller.sendIoRequestToDisk(ioRequest);
 	}
 
 	public void receiveCompletedIoOperationInfo(IoResponse response) {
-		// FIXME
+		// FIXME - TOP PRIORITY handle this (probably just pass it back to the simulator for processing)
 	}
 	
 	public boolean isOperationsInProgress() {

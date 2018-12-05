@@ -25,6 +25,7 @@ public class SsdController extends DiskController {
 		pageCapacity = disk.getPageCapacity();
 	}
 
+	/*
 	@Override
 	public Set<? extends IoRequest> createIoRequestsForFileOperations(FileOperation fileOperation, long currentTime) {
 		Set<SsdIoRequest> requestsForFile = new HashSet<SsdIoRequest>();
@@ -67,20 +68,18 @@ public class SsdController extends DiskController {
 		
 		return requestsForFile;
 	}
+	*/
 	
-	public static IoRequestType convertFileOperationTypeToIoRequestType(FileOperationType fileOperationType) {
-		switch(fileOperationType) {
-		case READ:
-			return IoRequestType.READ;
-		case WRITE:
-			return IoRequestType.WRITE;
-		default:
-			// TODO should never happen, implement an exception
-			return null;
-		}
+	public void setInitialDiskState() {
+		// TODO
 	}
 	
-	public boolean isOperationsInProgress() {
-		return !outstandingIoRequests.isEmpty();
+	@Override
+	public void sendIoRequestToDisk(IoRequest ioRequest) {
+		disk.processIoRequest(ioRequest);
 	}
+    
+    public boolean isOperationsInProgress() {
+        return disk.hasOperationsInProgress();
+    }
 }
