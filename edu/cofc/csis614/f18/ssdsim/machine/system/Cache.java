@@ -2,6 +2,8 @@ package edu.cofc.csis614.f18.ssdsim.machine.system;
 
 import java.util.PriorityQueue;
 
+import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
+
 /**
  * A place for the system to store memoized operations. Logically, this would be RAM or some other type of memory that is much faster than disk (either HDD or SSD).
  * 
@@ -15,5 +17,9 @@ public class Cache {
 	public static final int DEBUG_SIZE = 2;
 	public static final int DEFAULT_SIZE = 500;
 	
-	PriorityQueue contents;
+	PriorityQueue<IoRequest> contents;
+	
+	public Cache() {
+	    contents = new PriorityQueue<IoRequest>();
+	}
 }

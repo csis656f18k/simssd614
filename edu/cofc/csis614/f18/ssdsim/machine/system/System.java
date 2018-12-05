@@ -1,8 +1,7 @@
 package edu.cofc.csis614.f18.ssdsim.machine.system;
 
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.SortedSet;
 
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
@@ -26,12 +25,13 @@ public class System {
 	Cache cache;
 	boolean useMemoization;
 
-	//private Set<IoResponse> responses;
+	private Set<IoResponse> responses;
 
 	public System(Disk diskToTest) {
 		cache = new Cache();
 		
 		this.diskToTest = diskToTest;
+		diskToTest.setSystem(this);
 		switch (diskToTest.getType()) {
 		case SSD:
 			controller = new SsdController((Ssd) diskToTest);
@@ -43,6 +43,8 @@ public class System {
 			// TODO: implement exception, since this should never happen
 			break;
 		}
+		
+		responses = new HashSet<IoResponse>();
 	}
 	
 	public void setInitialDiskState() {
@@ -80,10 +82,16 @@ public class System {
 	}
 
 	public void receiveCompletedIoOperationInfo(IoResponse response) {
-		// FIXME - TOP PRIORITY handle this (probably just pass it back to the simulator for processing)
+		// A real computer would use the retrieved data here, somehow, but we just need to keep track of stats for simulation purposes
+	    
+	    responses.add(response);
 	}
 	
 	public boolean isOperationsInProgress() {
 		return controller.isOperationsInProgress();
+	}
+	
+	public Set<IoResponse> getIoResponses() {
+	    return responses;
 	}
 }

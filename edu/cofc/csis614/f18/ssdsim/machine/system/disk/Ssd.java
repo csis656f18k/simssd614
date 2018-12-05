@@ -8,7 +8,6 @@ import java.util.Set;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.SsdIoRequest;
-import edu.cofc.csis614.f18.ssdsim.machine.system.System;
 
 /**
  * A simulation of a solid-state disk.
@@ -27,8 +26,6 @@ public class Ssd extends Disk {
 
 	public static final int DEFAULT_READ_LATENCY = DiskConstants.SSD_TLC.getReadLatency();
 	public static final int DEFAULT_WRITE_LATENCY = DiskConstants.SSD_TLC.getWriteLatency();
-	
-	private System system;
 	
 	private int blocksPerDisk;
 	private int blockCapacity;
@@ -52,10 +49,6 @@ public class Ssd extends Disk {
 		for(int i = 0; i < blocksPerDisk; i++) {
 			blocks.add(new SsdBlock());
 		}
-	}
-	
-	public void setSystem(System system) {
-		this.system = system;
 	}
 
 	@Override

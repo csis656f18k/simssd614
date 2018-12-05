@@ -1,10 +1,6 @@
 package edu.cofc.csis614.f18.ssdsim.machine.system.diskcontroller;
 
-import java.util.Set;
-
-import edu.cofc.csis614.f18.ssdsim.FileOperation;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
-import edu.cofc.csis614.f18.ssdsim.machine.ioop.SsdIoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Disk;
 
 public class HddController extends DiskController {

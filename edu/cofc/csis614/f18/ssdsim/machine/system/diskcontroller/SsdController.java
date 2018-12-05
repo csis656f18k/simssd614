@@ -1,15 +1,6 @@
 package edu.cofc.csis614.f18.ssdsim.machine.system.diskcontroller;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import edu.cofc.csis614.f18.ssdsim.FileOperation;
-import edu.cofc.csis614.f18.ssdsim.FileOperationType;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
-import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequestType;
-import edu.cofc.csis614.f18.ssdsim.machine.ioop.SsdIoRequest;
-import edu.cofc.csis614.f18.ssdsim.machine.system.File;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Ssd;
 
 public class SsdController extends DiskController {

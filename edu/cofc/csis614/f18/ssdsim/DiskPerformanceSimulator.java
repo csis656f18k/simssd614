@@ -1,17 +1,15 @@
 package edu.cofc.csis614.f18.ssdsim;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import edu.cofc.csis614.f18.ssdsim.data.DiskResults;
 import edu.cofc.csis614.f18.ssdsim.data.SingleTrialResult;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequestType;
+import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.SsdIoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.system.System;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Disk;
@@ -28,7 +26,10 @@ public class DiskPerformanceSimulator {
 	static System system;
 	static Disk diskToTest;
 	
-	static Map<Disk, DiskResults> allResults;
+	static Queue<IoRequest> requests;
+
+    // static Map<Disk, DiskResults> allResults;
+    static List<SingleTrialResult> results;
 
 	public static void main(String[] args) {
 		initializeSimulation();
@@ -41,13 +42,21 @@ public class DiskPerformanceSimulator {
 		
 		//timer = new Timer();
 		time = 0L;
+
+        requests = new LinkedList<IoRequest>();
+		populateRequests();
 		
-		allResults = new HashMap<Disk, DiskResults>();
+		//allResults = new HashMap<Disk, DiskResults>();
+		results = new ArrayList<SingleTrialResult>();
 
 		createSystem();
 		// FIXME createFiles();
 		// FIXME loadFilesToDisk();
 		//createFileOperations();
+	}
+	
+	private static void populateRequests() {
+        requests.add(new SsdIoRequest(IoRequestType.READ, 2L, 0, time));
 	}
 	
 	private static void createSystem() {
@@ -57,38 +66,40 @@ public class DiskPerformanceSimulator {
 	}
 	
 	private static void runSimulation() {
-		system.setInitialDiskState();
-		system.enableMemoization();
-		runOneTrial();
+//		system.setInitialDiskState();
+//		system.enableMemoization();
+//		runOneTrial();
 
 		system.setInitialDiskState();
 		system.disableMemoization();
-		runOneTrial();
+		results.add(runOneTrial());
 	}
 
 	/**
 	 * Simulate a single disk on a single system, with some number of file operations, one time.
 	 */
 	private static SingleTrialResult runOneTrial() {
-		SingleTrialResult result = new SingleTrialResult();
-		
 		while(isSomeOperationsStillOutstanding()) {
-			// TODO: Receive data coming back from earlier ops, and add to result? Or do this via pub-sub?
 			system.updateTime(time);
 			
-			// TODO: support sending more than one op
-			IoRequest request = new SsdIoRequest(IoRequestType.READ, 2L, 0, time);
-			system.handleIoRequest(request);
-			// TODO finish
+			while(requests.peek() != null) { // In case multiple requests this time tick, use while
+	            if(requests.peek().getTime() == time) {
+	                system.handleIoRequest(requests.remove());
+	            }
+			}
 			
 			time++;
 		}
 		
-		return result;
+        Set<IoResponse> rawData = system.getIoResponses();
+		
+		return new SingleTrialResult(rawData);
 	}
 	
 	private static boolean isSomeOperationsStillOutstanding() {
-        // TODO handle queue of upcoming IoRequests, once that's re-implemented
+	    if(!requests.isEmpty()) {
+	        return true;
+	    }
 	    
         return system.isOperationsInProgress();
     }
@@ -98,6 +109,13 @@ public class DiskPerformanceSimulator {
 	}
 	
 	private static void presentResults() {
-		// FIXME
+	    int numTrials = results.size();
+		for(int i = 0; i < numTrials; i++) {
+            java.lang.System.out.println("Results for trial " + (i + 1) + ":");
+            java.lang.System.out.println(results.get(i).getTimeTakenOverall() + " ns");
+            java.lang.System.out.println();
+		}
+
+        java.lang.System.out.println("Complete!");
 	}
 }
