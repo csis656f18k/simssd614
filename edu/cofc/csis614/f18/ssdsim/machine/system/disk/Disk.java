@@ -7,6 +7,7 @@ import java.util.TreeMap;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
 import edu.cofc.csis614.f18.ssdsim.machine.system.System;
+import edu.cofc.csis614.f18.ssdsim.timer.Timer;
 
 /**
  * The disk being tested in the simulation.
@@ -14,7 +15,7 @@ import edu.cofc.csis614.f18.ssdsim.machine.system.System;
  * Responsible for handling incoming I/O requests and returning data about the results, primarily the time taken to perform the operation.
  */
 public abstract class Disk {
-	long time;
+    Timer timer;
     
     System system;
 	
@@ -40,7 +41,7 @@ public abstract class Disk {
         this.system = system;
     }
 	
-	public abstract void updateTime(long timeIn);
+	public abstract void updateTime(Timer timer);
 	
 	public abstract void cleanUpOldTasks();
 	

@@ -6,10 +6,11 @@ import java.util.TreeSet;
 
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Disk;
+import edu.cofc.csis614.f18.ssdsim.timer.Timer;
 
 public abstract class DiskController {
-	long time;
-	
+    private Timer timer;
+    
 	Disk disk;
 	
 	SortedSet<Long> outstandingIoRequests;
@@ -18,9 +19,9 @@ public abstract class DiskController {
 		outstandingIoRequests = new TreeSet<Long>();
 	}
 	
-	public void updateTime(long timeIn) {
-		time = timeIn;
-        disk.updateTime(time);
+	public void updateTime(Timer timer) {
+		this.timer = timer;
+        disk.updateTime(timer);
         
         // TODO: do anything that happens here at time timeIn
 	}

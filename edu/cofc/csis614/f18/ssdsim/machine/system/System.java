@@ -10,6 +10,7 @@ import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Ssd;
 import edu.cofc.csis614.f18.ssdsim.machine.system.diskcontroller.DiskController;
 import edu.cofc.csis614.f18.ssdsim.machine.system.diskcontroller.HddController;
 import edu.cofc.csis614.f18.ssdsim.machine.system.diskcontroller.SsdController;
+import edu.cofc.csis614.f18.ssdsim.timer.Timer;
 
 /**
  * The computer being simulated.
@@ -17,8 +18,8 @@ import edu.cofc.csis614.f18.ssdsim.machine.system.diskcontroller.SsdController;
  * Responsible for requesting disk operations and reporting results back to the simulator.
  */
 public class System {
-	private long time;
-	
+    private Timer timer;
+    
 	Disk diskToTest; // FUTURE: support multiple disks
 	DiskController controller;
 
@@ -27,8 +28,8 @@ public class System {
 
 	private Set<IoResponse> responses;
 
-	public System(Disk diskToTest) {
-		cache = new Cache();
+	public System(Timer timer, Disk diskToTest) {
+		this.timer = timer;
 		
 		this.diskToTest = diskToTest;
 		diskToTest.setSystem(this);
@@ -44,6 +45,8 @@ public class System {
 			break;
 		}
 		
+        cache = new Cache();
+		
 		responses = new HashSet<IoResponse>();
 	}
 	
@@ -51,11 +54,8 @@ public class System {
 		controller.setInitialDiskState();
 	}
 	
-	public void updateTime(long timeIn) {
-		time = timeIn;
-		controller.updateTime(time);
-		
-		// TODO: do anything that happens here at time timeIn
+	public void updateTime() {
+		controller.updateTime(timer);
 	}
 	
 	public void enableMemoization() {

@@ -8,6 +8,7 @@ import java.util.Set;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.SsdIoRequest;
+import edu.cofc.csis614.f18.ssdsim.timer.Timer;
 
 /**
  * A simulation of a solid-state disk.
@@ -69,12 +70,12 @@ public class Ssd extends Disk {
 	}
 
 	@Override
-	public void updateTime(long timeIn) {
-		time = timeIn;
+	public void updateTime(Timer timer) {
+		this.timer = timer;
 		
 		cleanUpOldTasks();
 		
-		if(blocked && unblockTime != time) {
+		if(blocked && unblockTime != timer.getTime()) {
 		    return;
 		}
 		
@@ -84,7 +85,7 @@ public class Ssd extends Disk {
 
 	@Override
 	public void cleanUpOldTasks() {
-		Set<IoResponse> completedOperations = operationsInProgress.remove(time);
+		Set<IoResponse> completedOperations = operationsInProgress.remove(timer.getTime());
 
 		if(completedOperations == null) {
 		    return;
@@ -110,7 +111,7 @@ public class Ssd extends Disk {
 		}
 		
 		blocked = true;
-		unblockTime = time + DiskConstants.SSD_TLC.getEraseLatency();
+		unblockTime = timer.getTime() + DiskConstants.SSD_TLC.getEraseLatency();
 		
 		SsdBlock staleBlock = null;
 		for(SsdBlock block : blocks) {
@@ -155,7 +156,7 @@ public class Ssd extends Disk {
     			break;
 		}
 		
-		long completionTime = time + latency; // Don't need to worry about simulating actual I/O; just track how long it takes
+		long completionTime = timer.getTime() + latency; // Don't need to worry about simulating actual I/O; just track how long it takes
 
 		IoResponse response = new IoResponse(request.getId(), request.getType(), completionTime);
 

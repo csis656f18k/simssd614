@@ -14,6 +14,7 @@ import edu.cofc.csis614.f18.ssdsim.machine.ioop.SsdIoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.system.System;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Disk;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Ssd;
+import edu.cofc.csis614.f18.ssdsim.timer.Timer;
 
 /**
  * The main class for the simulator.
@@ -21,7 +22,7 @@ import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Ssd;
  * Responsible for setting up the model system and disk(s) and actually running trials, as well as reporting the results.
  */
 public class DiskPerformanceSimulator {
-	private static long time;
+    private static Timer timer;
 	
 	static System system;
 	static Disk diskToTest;
@@ -36,12 +37,10 @@ public class DiskPerformanceSimulator {
 		runSimulation();
 		presentResults();
 	}
-	
+
+    // TODO: eventually allow user input for run count, disk types, etc.; for MVP, hard-code
 	private static void initializeSimulation () {
-		// TODO: eventually allow user input for run count, disk types, etc.; for MVP, hard-code
-		
-		//timer = new Timer();
-		time = 0L;
+		timer = new Timer();
 
         requests = new LinkedList<IoRequest>();
 		populateRequests();
@@ -56,13 +55,13 @@ public class DiskPerformanceSimulator {
 	}
 	
 	private static void populateRequests() {
-        requests.add(new SsdIoRequest(IoRequestType.READ, 2L, 0, time));
+        requests.add(new SsdIoRequest(IoRequestType.READ, 2L, 0, 0L));
 	}
 	
 	private static void createSystem() {
 		Disk disk = new Ssd(); // TODO: eventually allow configuring disk in system; for MVP, just use an SSD
 
-		system = new System(disk);
+		system = new System(timer, disk);
 	}
 	
 	private static void runSimulation() {
@@ -80,15 +79,15 @@ public class DiskPerformanceSimulator {
 	 */
 	private static SingleTrialResult runOneTrial() {
 		while(isSomeOperationsStillOutstanding()) {
-			system.updateTime(time);
+			system.updateTime();
 			
 			while(requests.peek() != null) { // In case multiple requests this time tick, use while
-	            if(requests.peek().getTime() == time) {
+	            if(requests.peek().getTime() == timer.getTime()) {
 	                system.handleIoRequest(requests.remove());
 	            }
 			}
 			
-			time++;
+			timer.stepForward();
 		}
 		
 		Set<IoResponse> rawData = system.getIoResponses();
