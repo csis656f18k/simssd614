@@ -1,16 +1,16 @@
 package edu.cofc.csis614.f18.ssdsim;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import edu.cofc.csis614.f18.ssdsim.data.DiskResults;
 import edu.cofc.csis614.f18.ssdsim.data.SingleTrialResult;
-import edu.cofc.csis614.f18.ssdsim.machine.system.File;
+import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
+import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequestType;
+import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
+import edu.cofc.csis614.f18.ssdsim.machine.ioop.SsdIoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.system.System;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Disk;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Ssd;
@@ -21,20 +21,15 @@ import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Ssd;
  * Responsible for setting up the model system and disk(s) and actually running trials, as well as reporting the results.
  */
 public class DiskPerformanceSimulator {
-	public static final int DEFAULT_RUNS = 1; // Number of times to run each simulation - for when systems are generated probabilistically
-	
-	//static Timer timer;
 	private static long time;
 	
 	static System system;
+	static Disk diskToTest;
 	
-	static Set<Disk> disksToTest; // Set up as collection, but for MVP, will use just one disk at a time
-	
-	static List<File> files;
-	
-	static Queue<FileOperation> fileOperations;
-	
-	static Map<Disk, DiskResults> allResults;
+	static Queue<IoRequest> requests;
+
+    // static Map<Disk, DiskResults> allResults;
+    static List<SingleTrialResult> results;
 
 	public static void main(String[] args) {
 		initializeSimulation();
@@ -47,13 +42,21 @@ public class DiskPerformanceSimulator {
 		
 		//timer = new Timer();
 		time = 0L;
+
+        requests = new LinkedList<IoRequest>();
+		populateRequests();
 		
-		allResults = new HashMap<Disk, DiskResults>();
+		//allResults = new HashMap<Disk, DiskResults>();
+		results = new ArrayList<SingleTrialResult>();
 
 		createSystem();
-		createFiles();
-		loadFilesToDisk();
-		createFileOperations();
+		// FIXME createFiles();
+		// FIXME loadFilesToDisk();
+		//createFileOperations();
+	}
+	
+	private static void populateRequests() {
+        requests.add(new SsdIoRequest(IoRequestType.READ, 2L, 0, time));
 	}
 	
 	private static void createSystem() {
@@ -62,115 +65,57 @@ public class DiskPerformanceSimulator {
 		system = new System(disk);
 	}
 	
-	private static void createFiles() {
-		files = new ArrayList<File>();
-		
-		// FUTURE hard-coded for MVP
-		files.add(new File(files.size() + 1, 600L, 12L));
-		// TODO: more files
-	}
-	
-	private static void loadFilesToDisk() {
-		system.loadFilesToDisk(files);
-	}
-	
-	private static void createFileOperations() {
-		fileOperations = new LinkedList<FileOperation>();
-
-		// FUTURE hard-coded for MVP
-		fileOperations.add(new FileOperation(FileOperationType.READ, files.get(1), 2L));
-		// TODO: more file ops
-	}
-	
 	private static void runSimulation() {
-		runOneTrial(); // FIXME save results
-		
-		// TODO - placeholder for multi-disk setup
-		
-		/*
-		 * 
-		 *
-		for(Disk disk : disksToTest) {
-			DiskResults diskResults = new DiskResults();
-			
-			system = new System(disk);
-			
-			for(int run = 0; run < DEFAULT_RUNS; run++) {
-				SingleTrialResult result = runOneTrial();
-		
-				addToDiskResults(result);
-			}
-			
-			allResults.put(disk, diskResults);
-		}
-		 */
+//		system.setInitialDiskState();
+//		system.enableMemoization();
+//		runOneTrial();
+
+		system.setInitialDiskState();
+		system.disableMemoization();
+		results.add(runOneTrial());
 	}
-	
+
 	/**
 	 * Simulate a single disk on a single system, with some number of file operations, one time.
 	 */
 	private static SingleTrialResult runOneTrial() {
-		/*
-		 * Preconditions:
-		 * System is fully initialized, including a disk and a disk controller
-		 * Files and file operations have been passed to system
-		 * 
-		 * Behavior:
-		 * System parses the received file operations and dispatches them to the disk, in order, via the disk controller
-		 * 
-		 * Postconditions:
-		 * All IO operations performed
-		 */
-
-		// NB all the IO requests should be generated here in the simulation class as they are logically part of the simulation, not the system
-		// Remember the requests need to have predetermined times
-		// This also means all the files need to be generated here too because the IO requests depend on knowing what files are there
-		// 
-		// TO DO HERE:
-		// tell the system to run a single trial, i.e. send all of the IO requests (predetermined content; may change this later) to the disk
-		// receive the results of the trial
-		// save/send the results of the trial
-		
-		SingleTrialResult result = new SingleTrialResult();
-		
-		while(isSomeFileOperationsStillOutstanding()) {
-			// FUTURE: Some kind of pub-sub setup for receiving/handling data coming back from earlier ops, and add to result
+		while(isSomeOperationsStillOutstanding()) {
+			system.updateTime(time);
 			
-			system.updateTime(time); // Let components know time has moved forward so they can do anything that happens in the new time tick
-			
-			Queue<FileOperation> fileOperationsThisTimeTick = getFileOperationsThisTimeTick();
-			
-			for(FileOperation fileOperation : fileOperationsThisTimeTick) {
-				system.handleFileOperationRequest(fileOperation);
+			while(requests.peek() != null) { // In case multiple requests this time tick, use while
+	            if(requests.peek().getTime() == time) {
+	                system.handleIoRequest(requests.remove());
+	            }
 			}
 			
 			time++;
 		}
 		
-		return result; // FIXME populate the result, probably by requesting it from system
+		Set<IoResponse> rawData = system.getIoResponses();
+
+		return new SingleTrialResult(rawData);
 	}
-	
-	private static boolean isSomeFileOperationsStillOutstanding() {
-		// If there are operations that aren't even started yet, this is definitely true
-		if(!fileOperations.isEmpty()) {
-			return true;
-		}
-		
-		// Otherwise, all the operations have been dispatched but maybe not all of them have returned; check on that
-		return system.isOperationsInProgress();
-	}
-	
-	private static Queue<FileOperation> getFileOperationsThisTimeTick() {
-		Queue<FileOperation> fileOperationsThisTimeTick = new LinkedList<FileOperation>();
-		
-		while(fileOperations.peek() != null && fileOperations.peek().getRequestTime() == time) {
-			fileOperationsThisTimeTick.add(fileOperations.remove());
-		}
-		
-		return fileOperationsThisTimeTick;
+
+	private static boolean isSomeOperationsStillOutstanding() {
+	    if(!requests.isEmpty()) {
+	        return true;
+	    }
+	    
+        return system.isOperationsInProgress();
+    }
+
+    private static void addToDiskResults(SingleTrialResult latestResult) {
+		// FIXME
 	}
 	
 	private static void presentResults() {
-		java.lang.System.out.println("The disk simulator ran."); // FIXME display the actual results instead of debug text
+	    int numTrials = results.size();
+		for(int i = 0; i < numTrials; i++) {
+            java.lang.System.out.println("Results for trial " + (i + 1) + ":");
+            java.lang.System.out.println(results.get(i).getTimeTakenOverall() + " ns");
+            java.lang.System.out.println();
+		}
+
+        java.lang.System.out.println("Complete!");
 	}
 }

@@ -8,7 +8,6 @@ import java.util.Set;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.SsdIoRequest;
-import edu.cofc.csis614.f18.ssdsim.machine.system.System;
 
 /**
  * A simulation of a solid-state disk.
@@ -16,19 +15,17 @@ import edu.cofc.csis614.f18.ssdsim.machine.system.System;
 public class Ssd extends Disk {
 	public static final int DEBUG_BLOCKS_PER_SSD = 4;
 	public static final int DEBUG_PAGES_PER_BLOCK = 6;
-	public static final int DEBUG_PAGE_CAPACITY = 50;
+	public static final int DEBUG_PAGE_CAPACITY = 50; // arbitrary size units
 
-	public static final int DEFAULT_BLOCKS_PER_SSD = 200; // FIXME
-	public static final int DEFAULT_PAGES_PER_BLOCK = 600; // FIXME
-	public static final int DEFAULT_PAGE_CAPACITY = 100; // FIXME
+	public static final int DEFAULT_BLOCKS_PER_SSD = 250;
+	public static final int DEFAULT_PAGES_PER_BLOCK = 256;
+	public static final int DEFAULT_PAGE_CAPACITY = 8000; // bytes
 
 	public static final int DEBUG_READ_LATENCY = 2;
 	public static final int DEBUG_WRITE_LATENCY = 20;
 
-	public static final int DEFAULT_READ_LATENCY = 50; // FIXME
-	public static final int DEFAULT_WRITE_LATENCY = 500; // FIXME
-	
-	private System system;
+	public static final int DEFAULT_READ_LATENCY = DiskConstants.SSD_TLC.getReadLatency();
+	public static final int DEFAULT_WRITE_LATENCY = DiskConstants.SSD_TLC.getWriteLatency();
 	
 	private int blocksPerDisk;
 	private int blockCapacity;
@@ -53,10 +50,6 @@ public class Ssd extends Disk {
 			blocks.add(new SsdBlock());
 		}
 	}
-	
-	public void setSystem(System system) {
-		this.system = system;
-	}
 
 	@Override
 	public DiskType getType() {
@@ -78,21 +71,29 @@ public class Ssd extends Disk {
 	@Override
 	public void updateTime(long timeIn) {
 		time = timeIn;
-
+		
 		cleanUpOldTasks();
+		
+		if(blocked && unblockTime != time) {
+		    return;
+		}
+		
 		doGarbageCollection();
 		// Once this stuff is done, disk can accept new incoming requests for this time tick
 	}
 
 	@Override
 	public void cleanUpOldTasks() {
-		if(operationsInProgress.containsKey(time)) {
-			// TODO: remove, don't just read; also, update counter
-			Set<IoResponse> completedOperations = operationsInProgress.get(time);
-			for(IoResponse response : completedOperations) {
-				system.receiveCompletedIoOperationInfo(response);
-			}
+		Set<IoResponse> completedOperations = operationsInProgress.remove(time);
+
+		if(completedOperations == null) {
+		    return;
 		}
+		
+		operationsInProgressCount -= completedOperations.size();
+        for(IoResponse response : completedOperations) {
+            system.receiveCompletedIoOperationInfo(response);
+        }
 	}
 	
 	// TODO: figure out some way to update the files in the system to know they've been moved to new memory locations
@@ -104,19 +105,29 @@ public class Ssd extends Disk {
 				break;
 			}
 		}
+		if(emptyBlock == null) {
+		    return;
+		}
 		
-		for(SsdBlock staleBlock : blocks) {
-			if(!staleBlock.containsStalePage()) {
+		blocked = true;
+		unblockTime = time + DiskConstants.SSD_TLC.getEraseLatency();
+		
+		SsdBlock staleBlock = null;
+		for(SsdBlock block : blocks) {
+			if(!block.containsStalePage()) {
 				continue;
 			}
 			
+			staleBlock = block;
 			for(int i = 0; i < pagesPerBlock; i++) {
-				SsdPage inUsePage = staleBlock.pages.get(i);
-				if(inUsePage.status == SsdPageStatus.IN_USE) {
+				SsdPage page = staleBlock.pages.get(i);
+				if(page.status == SsdPageStatus.IN_USE) {
 					emptyBlock.pages.get(i).status = SsdPageStatus.IN_USE;
 				} else {
 					emptyBlock.pages.get(i).status = SsdPageStatus.AVAILABLE;
 				}
+				
+				page.status = SsdPageStatus.AVAILABLE;
 			}
 			
 			emptyBlock = staleBlock;
@@ -129,33 +140,34 @@ public class Ssd extends Disk {
 		
 		int latency;
 		switch(request.getType()) {
-		case READ:
-			// No updating needed, reads don't change state
-			// All reads take the same amount of time
-			latency = readLatency;
-			break;
-		case WRITE:
-			// TODO - add logic for if the write needs to wait or copy blocks
-			latency = handleWriteRequest(requestIn);//FIXME
-			break;
-		default:
-			// TODO should never happen, implement exception
-			latency = -111;
-			break;
+    		case READ:
+    			// No updating needed, reads don't change state
+    			// All reads take the same amount of time
+    			latency = readLatency;
+    			break;
+    		case WRITE:
+    			// TODO - add logic for if the write needs to wait or copy blocks
+    			latency = handleWriteRequest(requestIn);//FIXME
+    			break;
+    		default:
+    			// TODO should never happen, implement exception
+    			latency = -111;
+    			break;
 		}
-		long completionTime = requestIn.getTime() + latency; // Don't need to worry about simulating actual I/O; just track how long it takes
+		
+		long completionTime = time + latency; // Don't need to worry about simulating actual I/O; just track how long it takes
 
-		IoResponse response = new IoResponse(request.getId(), completionTime);
+		IoResponse response = new IoResponse(request.getId(), request.getType(), completionTime);
 
 		Set<IoResponse> existingResponsesForCompletionTime = operationsInProgress.get(completionTime);
 		if(existingResponsesForCompletionTime == null) {
 			Set<IoResponse> newSet = new HashSet<IoResponse>();
 			newSet.add(response);
 			operationsInProgress.put(completionTime, newSet);
-			operationsInProgressCount++;
 		} else {
 			existingResponsesForCompletionTime.add(response);
 		}
+        operationsInProgressCount++;
 	}
 	
 	/*
@@ -193,7 +205,7 @@ public class Ssd extends Disk {
 		SsdBlock() {
 			pages = new ArrayList<SsdPage>();
 			for(int i = 0; i < pagesPerBlock; i++) {
-				pages.add(new SsdPage());
+				pages.add(new SsdPage(SsdPageStatus.AVAILABLE));
 			}
 		}
 		
@@ -236,8 +248,8 @@ public class Ssd extends Disk {
 	class SsdPage {
 		SsdPageStatus status;
 		
-		SsdPage() {
-			status = SsdPageStatus.AVAILABLE;
+		SsdPage(SsdPageStatus status) {
+			this.status = status;
 		}
 	}
 }

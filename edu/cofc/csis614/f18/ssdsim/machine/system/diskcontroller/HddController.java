@@ -1,8 +1,5 @@
 package edu.cofc.csis614.f18.ssdsim.machine.system.diskcontroller;
 
-import java.util.Set;
-
-import edu.cofc.csis614.f18.ssdsim.FileOperation;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Disk;
 
@@ -12,9 +9,14 @@ public class HddController extends DiskController {
 	}
 
 	@Override
-	public Set<IoRequest> createIoRequestsForFileOperations(FileOperation fileOperation, long currentTime) {
+	public void setInitialDiskState() {
 		// TODO Auto-generated method stub
-		return null;
+		
+	}
+	
+	@Override
+	public void sendIoRequestToDisk(IoRequest ioRequest) {
+		disk.processIoRequest(ioRequest);
 	}
 
 	@Override

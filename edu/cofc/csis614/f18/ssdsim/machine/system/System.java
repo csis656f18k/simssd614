@@ -1,11 +1,8 @@
 package edu.cofc.csis614.f18.ssdsim.machine.system;
 
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.SortedSet;
 
-import edu.cofc.csis614.f18.ssdsim.FileOperation;
-import edu.cofc.csis614.f18.ssdsim.FileOperationType;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Disk;
@@ -22,11 +19,11 @@ import edu.cofc.csis614.f18.ssdsim.machine.system.diskcontroller.SsdController;
 public class System {
 	private long time;
 	
-	DiskController controller;
-	Cache cache;
-
 	Disk diskToTest; // FUTURE: support multiple disks
-	SortedSet<File> files;
+	DiskController controller;
+
+	Cache cache;
+	boolean useMemoization;
 
 	private Set<IoResponse> responses;
 
@@ -34,6 +31,7 @@ public class System {
 		cache = new Cache();
 		
 		this.diskToTest = diskToTest;
+		diskToTest.setSystem(this);
 		switch (diskToTest.getType()) {
 		case SSD:
 			controller = new SsdController((Ssd) diskToTest);
@@ -45,41 +43,55 @@ public class System {
 			// TODO: implement exception, since this should never happen
 			break;
 		}
+		
+		responses = new HashSet<IoResponse>();
+	}
+	
+	public void setInitialDiskState() {
+		controller.setInitialDiskState();
 	}
 	
 	public void updateTime(long timeIn) {
 		time = timeIn;
 		controller.updateTime(time);
+		
 		// TODO: do anything that happens here at time timeIn
 	}
 	
-	public void loadFilesToDisk(List<File> files) {
-		for(File file : files) {
-			FileOperation fileOperation = new FileOperation(FileOperationType.WRITE, file, -1L);
-			
-			Set<? extends IoRequest> writeRequests = controller.createIoRequestsForFileOperations(fileOperation, -1L);
-			
-			controller.sendIoRequestsToDisk(writeRequests);
-		}
+	public void enableMemoization() {
+		useMemoization = true;
 	}
-
+	
+	public void disableMemoization() {
+		useMemoization = false;
+	}
+	
 	/**
-	 * <p>Will be called by the simulator for each simulated file operation.</p>
+	 * <p>Will be called by the simulator for each simulated operation.</p>
 	 * 
 	 * <p>Tells the disk controller how to make the operation happen.</p>
 	 * 
-	 * @param fileOperation
+	 * @param ioRequest
 	 */
-	public void handleFileOperationRequest(FileOperation fileOperation) {
-		// TODO: include logic for cache
-		// FIXME
+	public void handleIoRequest(IoRequest ioRequest) {
+		if(useMemoization) {
+			// TODO: include logic for cache
+		}
+		
+		controller.sendIoRequestToDisk(ioRequest);
 	}
 
 	public void receiveCompletedIoOperationInfo(IoResponse response) {
-		// FIXME
+		// A real computer would use the retrieved data here, somehow, but we just need to keep track of stats for simulation purposes
+	    
+	    responses.add(response);
 	}
 	
 	public boolean isOperationsInProgress() {
 		return controller.isOperationsInProgress();
+	}
+	
+	public Set<IoResponse> getIoResponses() {
+	    return responses;
 	}
 }
