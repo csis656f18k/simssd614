@@ -80,11 +80,11 @@ public class Ssd extends Disk {
 	public void updateTime() {
 		cleanUpOldTasks();
 		
-		if(blocked && unblockTime != timer.getTime()) {
-		    return;
-		}
-		
-		doGarbageCollection();
+//		if(blocked && unblockTime != timer.getTime()) {
+//		    return;
+//		}
+//		
+//		doGarbageCollection();
 	}
 
 	@Override

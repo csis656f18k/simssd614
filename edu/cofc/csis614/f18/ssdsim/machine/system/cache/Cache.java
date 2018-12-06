@@ -91,8 +91,10 @@ public class Cache {
 	    switch(request.getType()) {
 	        case READ:
                 handleReadRequest(request);
+                break;
 	        case WRITE:
                 handleWriteRequest(request);
+                break;
             default:
                 // FUTURE: this should never happen, implement an exception
                 break;
@@ -111,8 +113,14 @@ public class Cache {
             }
         }
 
-        // If the value isn't found anywhere in the cache, signal that the request needs to be handed off to disk
-        addInProgressCacheOperation(timer.getTime() + requestLatency, new CacheResponse(request, null));
+        // Otherwise, value isn't found anywhere in the cache, signal that the request needs to be handed off to disk
+        if(requestLatency == 0) {
+            // If the cache was empty, no time was spent looking through it; hand off directly
+            system.receiveIoRequestContinuingFromCache(request);
+        } else {
+            // Otherwise wait until the cache reading is complete, then hand off
+            addInProgressCacheOperation(timer.getTime() + requestLatency, new CacheResponse(request, null));
+        }
     }
 
     public void handleWriteRequest(IoRequest request) {
@@ -164,6 +172,6 @@ public class Cache {
 	}
 	
 	public boolean isOperationsQueued() {
-	    return !contents.isEmpty();
+	    return operationsInProgressCount > 0;
 	}
 }

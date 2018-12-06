@@ -65,9 +65,9 @@ public class DiskPerformanceSimulator {
 	}
 	
 	private static void runSimulation() {
-//		system.setInitialDiskState();
-//		system.enableMemoization();
-//		runOneTrial();
+		system.setInitialDiskState();
+		system.enableMemoization();
+        results.add(runOneTrial());
 
 		system.setInitialDiskState();
 		system.disableMemoization();
