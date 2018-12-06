@@ -8,7 +8,7 @@ public class SsdIoRequest extends IoRequest {
 	private long timeReceived;
 	
 	public SsdIoRequest(IoRequestType type, long targetBlock, int targetPage, long currentTime) {
-		super(type);
+		super(type, currentTime);
 		
 		this.targetBlock = targetBlock;
 		this.targetPage = targetPage;
@@ -26,4 +26,15 @@ public class SsdIoRequest extends IoRequest {
 	public long getTimeReceived() {
 		return timeReceived;
 	}
+
+    @Override
+    public boolean referencesSameMemory(IoRequest otherObj) {
+        if(!(otherObj instanceof SsdIoRequest)) {
+            return false; // TODO this is actually an error, implement an exception 
+        }
+        
+        SsdIoRequest other = (SsdIoRequest) otherObj;
+        
+        return targetBlock == other.getTargetBlock() && targetPage == other.getTargetPage();
+    }
 }

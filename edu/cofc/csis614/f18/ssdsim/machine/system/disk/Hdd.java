@@ -1,7 +1,6 @@
 package edu.cofc.csis614.f18.ssdsim.machine.system.disk;
 
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
-import edu.cofc.csis614.f18.ssdsim.timer.Timer;
 
 // TODO: implement HDD operations for comparison after SSD done
 public class Hdd extends Disk {
@@ -11,8 +10,7 @@ public class Hdd extends Disk {
 	}
 
 	@Override
-	public void updateTime(Timer timer) {
-		this.timer = timer;
+	public void updateTime() {
 		// TODO: do anything that happens here at time timeIn
 	}
 

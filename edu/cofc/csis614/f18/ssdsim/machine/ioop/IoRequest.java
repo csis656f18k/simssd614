@@ -1,22 +1,26 @@
 package edu.cofc.csis614.f18.ssdsim.machine.ioop;
 
-public class IoRequest {
+public abstract class IoRequest {
 	private IoRequestType type;
 	
 	private static long maxId;
 	private long id;
 	
-	private long time;
+	private long startTime;
+    private int totalLatency;
 	
 	static {
 		maxId = 0;
 	}
 	
-	public IoRequest(IoRequestType type) {
+	public IoRequest(IoRequestType type, long time) {
 		maxId++;
 		id = maxId;
 		
 		this.type = type;
+		
+		startTime = time;
+		totalLatency = 0;
 	}
 
 	public long getId() {
@@ -26,8 +30,18 @@ public class IoRequest {
 	public IoRequestType getType() {
 		return type;
 	}
-	
-	public long getTime() {
-		return time;
-	}
+    
+    public long getStartTime() {
+        return startTime;
+    }
+    
+    public int getLatency() {
+        return totalLatency;
+    }
+    
+    public void increaseLatency(int elapsedTime) {
+        totalLatency += elapsedTime;
+    }
+
+    public abstract boolean referencesSameMemory(IoRequest other);
 }

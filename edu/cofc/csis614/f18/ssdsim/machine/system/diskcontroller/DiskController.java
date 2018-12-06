@@ -19,9 +19,8 @@ public abstract class DiskController {
 		outstandingIoRequests = new TreeSet<Long>();
 	}
 	
-	public void updateTime(Timer timer) {
-		this.timer = timer;
-        disk.updateTime(timer);
+	public void updateTime() {
+        disk.updateTime();
         
         // TODO: do anything that happens here at time timeIn
 	}

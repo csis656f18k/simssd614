@@ -35,7 +35,7 @@ public class Ssd extends Disk {
 	
 	List<SsdBlock> blocks;
 	
-	public Ssd() {
+	public Ssd(Timer timer) {
 		pageCapacity = DEBUG_PAGE_CAPACITY;
 		pagesPerBlock = DEBUG_PAGES_PER_BLOCK;
 		blocksPerDisk = DEBUG_BLOCKS_PER_SSD;
@@ -45,6 +45,8 @@ public class Ssd extends Disk {
 		
 		readLatency = DEBUG_READ_LATENCY;
 		writeLatency = DEBUG_WRITE_LATENCY;
+		
+		this.timer = timer;
 		
 		blocks = new ArrayList<SsdBlock>();
 		for(int i = 0; i < blocksPerDisk; i++) {
@@ -69,10 +71,13 @@ public class Ssd extends Disk {
 		return pageCapacity;
 	}
 
+	/**
+	 * This gets run at the start of every time tick.
+	 * 
+	 * Once this stuff is done, the disk can accept new incoming requests for this time tick.
+	 */
 	@Override
-	public void updateTime(Timer timer) {
-		this.timer = timer;
-		
+	public void updateTime() {
 		cleanUpOldTasks();
 		
 		if(blocked && unblockTime != timer.getTime()) {
@@ -80,7 +85,6 @@ public class Ssd extends Disk {
 		}
 		
 		doGarbageCollection();
-		// Once this stuff is done, disk can accept new incoming requests for this time tick
 	}
 
 	@Override

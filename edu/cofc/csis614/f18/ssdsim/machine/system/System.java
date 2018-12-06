@@ -5,6 +5,7 @@ import java.util.Set;
 
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
+import edu.cofc.csis614.f18.ssdsim.machine.system.cache.Cache;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Disk;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Ssd;
 import edu.cofc.csis614.f18.ssdsim.machine.system.diskcontroller.DiskController;
@@ -18,8 +19,6 @@ import edu.cofc.csis614.f18.ssdsim.timer.Timer;
  * Responsible for requesting disk operations and reporting results back to the simulator.
  */
 public class System {
-    private Timer timer;
-    
 	Disk diskToTest; // FUTURE: support multiple disks
 	DiskController controller;
 
@@ -29,8 +28,6 @@ public class System {
 	private Set<IoResponse> responses;
 
 	public System(Timer timer, Disk diskToTest) {
-		this.timer = timer;
-		
 		this.diskToTest = diskToTest;
 		diskToTest.setSystem(this);
 		switch (diskToTest.getType()) {
@@ -45,7 +42,7 @@ public class System {
 			break;
 		}
 		
-        cache = new Cache();
+        cache = new Cache(this, timer);
 		
 		responses = new HashSet<IoResponse>();
 	}
@@ -55,7 +52,8 @@ public class System {
 	}
 	
 	public void updateTime() {
-		controller.updateTime(timer);
+        cache.updateTime();
+        controller.updateTime();
 	}
 	
 	public void enableMemoization() {
@@ -65,30 +63,26 @@ public class System {
 	public void disableMemoization() {
 		useMemoization = false;
 	}
-	
-	/**
-	 * <p>Will be called by the simulator for each simulated operation.</p>
-	 * 
-	 * <p>Tells the disk controller how to make the operation happen.</p>
-	 * 
-	 * @param ioRequest
-	 */
+
 	public void handleIoRequest(IoRequest ioRequest) {
 		if(useMemoization) {
-			// TODO: include logic for cache
+			cache.handleIoRequest(ioRequest);
+		} else {
+			controller.sendIoRequestToDisk(ioRequest);
 		}
-		
-		controller.sendIoRequestToDisk(ioRequest);
+	}
+	
+	public void receiveIoRequestContinuingFromCache(IoRequest requestToSendToDisk) {
+        controller.sendIoRequestToDisk(requestToSendToDisk);
 	}
 
 	public void receiveCompletedIoOperationInfo(IoResponse response) {
 		// A real computer would use the retrieved data here, somehow, but we just need to keep track of stats for simulation purposes
-	    
 	    responses.add(response);
 	}
 	
 	public boolean isOperationsInProgress() {
-		return controller.isOperationsInProgress();
+		return controller.isOperationsInProgress() || cache.isOperationsQueued();
 	}
 	
 	public Set<IoResponse> getIoResponses() {

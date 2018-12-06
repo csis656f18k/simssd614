@@ -41,7 +41,7 @@ public abstract class Disk {
         this.system = system;
     }
 	
-	public abstract void updateTime(Timer timer);
+	public abstract void updateTime();
 	
 	public abstract void cleanUpOldTasks();
 	

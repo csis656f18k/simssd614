@@ -59,7 +59,7 @@ public class DiskPerformanceSimulator {
 	}
 	
 	private static void createSystem() {
-		Disk disk = new Ssd(); // TODO: eventually allow configuring disk in system; for MVP, just use an SSD
+		Disk disk = new Ssd(timer); // TODO: eventually allow configuring disk in system; for MVP, just use an SSD
 
 		system = new System(timer, disk);
 	}
@@ -82,7 +82,7 @@ public class DiskPerformanceSimulator {
 			system.updateTime();
 			
 			while(requests.peek() != null) { // In case multiple requests this time tick, use while
-	            if(requests.peek().getTime() == timer.getTime()) {
+	            if(requests.peek().getStartTime() == timer.getTime()) {
 	                system.handleIoRequest(requests.remove());
 	            }
 			}
