@@ -96,18 +96,17 @@ public class Ssd extends Disk {
 	    }
 	    
 		cleanUpOldTasks();
-	
-		// FUTURE: bring back blocking functionality
-//		if(blocked && unblockTime != timer.getTime()) {
-//		    return;
-//		}
-		
-//		doGarbageCollection();//FIXME restore
 	}
 
 	@Override
 	public void cleanUpOldTasks() {
 		Set<IoResponse> completedOperations = operationsInProgress.remove(timer.getTime());
+		
+		if(diskIsIdle()) {
+		    // FUTURE: restore blocking functionality
+	        
+	        doGarbageCollection();
+		}
 
 		if(completedOperations == null) {
 		    return;
@@ -117,6 +116,18 @@ public class Ssd extends Disk {
             system.receiveCompletedIoOperationInfo(response);
             operationsInProgressCount--;
         }
+	}
+	
+	private boolean diskIsIdle() {
+	    Set<Long> keys = operationsInProgress.keySet();
+	    for(long key : keys) {
+	        Set<IoResponse> values = operationsInProgress.get(key);
+	        if(values != null && !values.isEmpty()) {
+	            return false;
+	        }
+	    }
+	    
+	    return true;
 	}
 	
 	private void doGarbageCollection() {
