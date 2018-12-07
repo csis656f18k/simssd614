@@ -37,4 +37,14 @@ public class SsdIoRequest extends IoRequest {
         
         return targetBlock == other.getTargetBlock() && targetPage == other.getTargetPage();
     }
+
+    @Override
+    public boolean referencesSameMemory(IoResponse other) {
+        return referencesSameMemory(other.getRequest());
+    }
+    
+    @Override
+    public String toString() {
+        return "SSD IO request " + getId() + ": " + getType() + " block " + targetBlock + " page " + targetPage + " rec'd " + timeReceived;
+    }
 }

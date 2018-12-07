@@ -3,6 +3,8 @@ package edu.cofc.csis614.f18.ssdsim;
 import edu.cofc.csis614.f18.ssdsim.machine.system.File;
 
 /**
+ * FUTURE restore file functionality
+ * 
  * <p>A single operation on a specified file. Used in constructing test cases for the simulator.</p>
  */
 public class FileOperation {

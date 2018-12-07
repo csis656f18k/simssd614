@@ -22,6 +22,8 @@ import edu.cofc.csis614.f18.ssdsim.timer.Timer;
  * Responsible for setting up the model system and disk(s) and actually running trials, as well as reporting the results.
  */
 public class DiskPerformanceSimulator {
+    public static final boolean DEBUG_MODE = true;
+    
     private static Timer timer;
 	
 	static System system;
@@ -29,7 +31,6 @@ public class DiskPerformanceSimulator {
 	
 	static Queue<IoRequest> requests;
 
-    // static Map<Disk, DiskResults> allResults;
     static List<SingleTrialResult> results;
 
 	public static void main(String[] args) {
@@ -42,20 +43,22 @@ public class DiskPerformanceSimulator {
 	private static void initializeSimulation () {
 		timer = new Timer();
 
+        createSystem();
+
         requests = new LinkedList<IoRequest>();
 		populateRequests();
 		
-		//allResults = new HashMap<Disk, DiskResults>();
 		results = new ArrayList<SingleTrialResult>();
-
-		createSystem();
-		// FIXME createFiles();
-		// FIXME loadFilesToDisk();
-		//createFileOperations();
 	}
 	
 	private static void populateRequests() {
         requests.add(new SsdIoRequest(IoRequestType.READ, 2L, 0, 0L));
+        requests.add(new SsdIoRequest(IoRequestType.WRITE, 0L, 0, 1L));
+        requests.add(new SsdIoRequest(IoRequestType.WRITE, 0L, 4, 2L));
+        requests.add(new SsdIoRequest(IoRequestType.WRITE, 2L, 5, 3L));
+        requests.add(new SsdIoRequest(IoRequestType.READ, 2L, 5, 4L));
+        requests.add(new SsdIoRequest(IoRequestType.WRITE, 0L, 4, 5L));
+        requests.add(new SsdIoRequest(IoRequestType.READ, 0L, 4, 6L));
 	}
 	
 	private static void createSystem() {
@@ -65,13 +68,13 @@ public class DiskPerformanceSimulator {
 	}
 	
 	private static void runSimulation() {
+//        system.setInitialDiskState();
+//        system.disableMemoization();
+//        results.add(runOneTrial());
+        
 		system.setInitialDiskState();
 		system.enableMemoization();
         results.add(runOneTrial());
-
-		system.setInitialDiskState();
-		system.disableMemoization();
-		results.add(runOneTrial());
 	}
 
 	/**
@@ -79,13 +82,14 @@ public class DiskPerformanceSimulator {
 	 */
 	private static SingleTrialResult runOneTrial() {
 		while(isSomeOperationsStillOutstanding()) {
+            Utils.debugPrint("");
+            Utils.debugPrint("Time is now " + timer.getTime());
 			system.updateTime();
 			
-			while(requests.peek() != null) { // In case multiple requests this time tick, use while
-	            if(requests.peek().getStartTime() == timer.getTime()) {
-	                system.handleIoRequest(requests.remove());
-	            }
-			}
+			// Support multiple requests per time tick
+			while(requests.peek() != null && requests.peek().getStartTime() == timer.getTime()) {
+                system.handleIoRequest(requests.remove());
+            }
 			
 			timer.stepForward();
 		}
@@ -102,10 +106,6 @@ public class DiskPerformanceSimulator {
 	    
         return system.isOperationsInProgress();
     }
-
-    private static void addToDiskResults(SingleTrialResult latestResult) {
-		// FIXME
-	}
 	
 	private static void presentResults() {
 	    int numTrials = results.size();

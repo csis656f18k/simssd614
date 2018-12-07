@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * FUTURE: restore file functionality
+ * 
  * name is a positive integer representing the filename.
  * 
  * TODO: enforce positive integer in code

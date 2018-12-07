@@ -4,20 +4,14 @@ public class IoResponse {
 	private long requestId;
     private IoRequestType type;
 	private long timeCompleted;
-//	private int totalLatency;
+	private IoRequest request;
     
-    public IoResponse(long requestId, IoRequestType type, long timeCompleted) {
-        this.requestId = requestId;
-        this.type = type;
+    public IoResponse(IoRequest request, long timeCompleted) {
+        requestId = request.getId();
+        type = request.getType();
         this.timeCompleted = timeCompleted;
+        this.request = request;
     }
-    
-//    public IoResponse(IoRequest request) {
-//        requestId = request.getId();
-//        type = request.getType();
-//        totalLatency = request.getLatency();
-//        timeCompleted = request.getStartTime() + totalLatency;
-//    }
     
     public long getRequestId() {
         return requestId;
@@ -26,8 +20,17 @@ public class IoResponse {
     public IoRequestType getRequestType() {
         return type;
     }
+    
+    public IoRequest getRequest() {
+        return request;
+    }
 	
 	public long getTimeCompleted() {
 		return timeCompleted;
 	}
+    
+    @Override
+    public String toString() {
+        return "IO response for request #" + requestId + ", a " + type;
+    }
 }

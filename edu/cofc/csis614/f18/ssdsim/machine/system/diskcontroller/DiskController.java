@@ -6,11 +6,8 @@ import java.util.TreeSet;
 
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.Disk;
-import edu.cofc.csis614.f18.ssdsim.timer.Timer;
 
 public abstract class DiskController {
-    private Timer timer;
-    
 	Disk disk;
 	
 	SortedSet<Long> outstandingIoRequests;

@@ -10,12 +10,12 @@ package edu.cofc.csis614.f18.ssdsim.machine.system.disk;
  * http://codecapsule.com/2014/02/12/coding-for-ssds-part-2-architecture-of-an-ssd-and-benchmarking/
  */
 public enum DiskConstants {
-	CACHE_L1(1, 1, -1, -1),
-	CACHE_L2(4, 4, -1, -1),
-	RAM(25, 25, -1, -1),
-	SSD_SLC(25000, 250000, 1500000, -1),
-	SSD_MLC(50000, 900000, 3000000, -1),
-	SSD_TLC(100000, 1500000, 5000000, -1),
+	CACHE_L1(1, 1, 0, 0),
+	CACHE_L2(4, 4, 0, 0),
+	RAM(25, 25, 0, 0),
+	SSD_SLC(25000, 250000, 1500000, 0),
+	SSD_MLC(50000, 900000, 3000000, 0),
+	SSD_TLC(100000, 1500000, 5000000, 0),
 	HDD_10000(4500000, 4500000, -1, 12000000),
 	HDD_7200(4500000, 4500000, -1, 16666667);
 

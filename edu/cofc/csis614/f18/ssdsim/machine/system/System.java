@@ -3,6 +3,7 @@ package edu.cofc.csis614.f18.ssdsim.machine.system;
 import java.util.HashSet;
 import java.util.Set;
 
+import edu.cofc.csis614.f18.ssdsim.Utils;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
 import edu.cofc.csis614.f18.ssdsim.machine.system.cache.Cache;
@@ -73,6 +74,7 @@ public class System {
 	}
 	
 	public void receiveIoRequestContinuingFromCache(IoRequest requestToSendToDisk) {
+	    Utils.debugPrint("Now going from cache to disk: " + requestToSendToDisk);
         controller.sendIoRequestToDisk(requestToSendToDisk);
 	}
 

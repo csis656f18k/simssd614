@@ -7,7 +7,6 @@ public abstract class IoRequest {
 	private long id;
 	
 	private long startTime;
-    private int totalLatency;
 	
 	static {
 		maxId = 0;
@@ -20,7 +19,6 @@ public abstract class IoRequest {
 		this.type = type;
 		
 		startTime = time;
-		totalLatency = 0;
 	}
 
 	public long getId() {
@@ -34,14 +32,8 @@ public abstract class IoRequest {
     public long getStartTime() {
         return startTime;
     }
-    
-    public int getLatency() {
-        return totalLatency;
-    }
-    
-    public void increaseLatency(int elapsedTime) {
-        totalLatency += elapsedTime;
-    }
 
     public abstract boolean referencesSameMemory(IoRequest other);
+
+    public abstract boolean referencesSameMemory(IoResponse other);
 }

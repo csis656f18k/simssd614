@@ -7,5 +7,5 @@ public class DiskResults {
 	
 	int averageWriteSpeed;
 	int averageReadSpeed;
-	
+	// FUTURE use these and more
 }

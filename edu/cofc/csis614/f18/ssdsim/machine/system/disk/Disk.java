@@ -1,5 +1,7 @@
 package edu.cofc.csis614.f18.ssdsim.machine.system.disk;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -24,7 +26,9 @@ public abstract class Disk {
 	
 	int diskCapacity;
 	int readLatency;
-	int writeLatency;
+    int writeLatency;
+    int eraseLatency;
+    int seekLatency;
 	
 	SortedMap<Long, Set<IoResponse>> operationsInProgress;
 	int operationsInProgressCount;
@@ -39,6 +43,19 @@ public abstract class Disk {
     
     public void setSystem(System system) {
         this.system = system;
+    }
+    
+    Set<IoResponse> getAllOperationsInProgress() {
+        Set<IoResponse> allOperations = new HashSet<IoResponse>();
+        
+        Collection<Set<IoResponse>> operationsFromMap = operationsInProgress.values();
+        for(Set<IoResponse> setOfOperations : operationsFromMap ) {
+            for(IoResponse operation : setOfOperations) {
+                allOperations.add(operation);
+            }
+        }
+        
+        return allOperations;
     }
 	
 	public abstract void updateTime();

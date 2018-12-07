@@ -5,13 +5,13 @@ import java.util.Set;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
 
 public class SingleTrialResult {
-    private Set<IoResponse> rawData;
+    // private Set<IoResponse> rawData;
 	private long timeTaken;
 	
 	public SingleTrialResult(Set<IoResponse> rawData) {
-	    this.rawData = rawData;
+	    // this.rawData = rawData;
 	    
-	    // TODO processing of stuff like total time taken, time taken by operation type
+	    // FUTURE processing of stuff like total time taken, time taken by operation type
 	    
 	    timeTaken = -1L;
 	    for(IoResponse response : rawData) {

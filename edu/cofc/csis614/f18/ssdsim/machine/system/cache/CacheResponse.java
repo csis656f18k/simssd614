@@ -32,4 +32,9 @@ public class CacheResponse {
     public IoResponse getResponse() {
         return ioResponse;
     }
+    
+    @Override
+    public String toString() {
+        return "CACHE: request is [" + ioRequest + "] and response to submit is [" + ioResponse + "]";
+    }
 }
