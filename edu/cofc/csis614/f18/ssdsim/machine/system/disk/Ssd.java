@@ -97,12 +97,12 @@ public class Ssd extends Disk {
 	    
 		cleanUpOldTasks();
 	
-		// Blocking now handled elsewhere
+		// FUTURE: bring back blocking functionality
 //		if(blocked && unblockTime != timer.getTime()) {
 //		    return;
 //		}
 		
-		doGarbageCollection();
+//		doGarbageCollection();//FIXME restore this
 	}
 
 	@Override
@@ -119,6 +119,7 @@ public class Ssd extends Disk {
         }
 	}
 	
+	/*
 	private void doGarbageCollection() {
 		SsdBlock emptyBlock = null;
 		for(SsdBlock block : blocks) {
@@ -155,6 +156,7 @@ public class Ssd extends Disk {
 			emptyBlock = staleBlock;
 		}
 	}
+	*/
 
 	@Override
 	public void processIoRequest(IoRequest requestIn) {
@@ -224,7 +226,7 @@ public class Ssd extends Disk {
 	 * @return the total latency of the write operation
 	 */
 	private int handleWriteRequest(IoRequest writeRequest) {
-		// TODO - get more sophisticated with tracking status of individual pages on disk
+		// FUTURE - get more sophisticated with tracking status of individual pages on disk
 	    int latency = 0;
 	    
 	    Set<SsdBlock> blocksToWrite = getBlocksForRequest(writeRequest);

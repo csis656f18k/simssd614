@@ -31,6 +31,6 @@ public class IoResponse {
     
     @Override
     public String toString() {
-        return "IO response for request #" + requestId + ", a " + type;
+        return "IO response for request #" + requestId + " (" + request + ") - complete at " + timeCompleted;
     }
 }

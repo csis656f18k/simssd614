@@ -45,6 +45,6 @@ public class SsdIoRequest extends IoRequest {
     
     @Override
     public String toString() {
-        return "SSD IO request " + getId() + ": " + getType() + " block " + targetBlock + " page " + targetPage + " rec'd " + timeReceived;
+        return "SSD IO request #" + getId() + ": " + getType() + " " + targetBlock + "/" + targetPage + " rec'd " + timeReceived;
     }
 }

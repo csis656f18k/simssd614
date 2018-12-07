@@ -37,4 +37,9 @@ public class CacheItem implements Comparable<CacheItem> {
     public int compareTo(CacheItem other) {
         return (int) (lastReferencedTime - other.getLastReferencedTime());
     }
+    
+    @Override
+    public String toString() {
+        return "Cache item for request " + request + " - last ref " + lastReferencedTime;
+    }
 }

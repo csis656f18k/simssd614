@@ -8,10 +8,10 @@ public class SsdController extends DiskController {
 		this.disk = disk;
 	}
 
-	// Older version of this file had logic for file operations here
+	// Dev note: older version of this file had logic for file operations here
 	
 	public void setInitialDiskState() {
-		// TODO - unnecessary if pre-populating disk is not needed
+		// FUTURE - unnecessary if pre-populating disk is not needed
 	}
 	
 	@Override

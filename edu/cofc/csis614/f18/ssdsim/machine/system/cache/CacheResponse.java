@@ -10,19 +10,24 @@ public class CacheResponse {
     private IoRequest ioRequest;
     private IoResponse ioResponse;
     
-    public CacheResponse(IoRequest ioRequest) {
+    long completionTime;
+    
+    public CacheResponse(IoRequest ioRequest, long completionTime) {
         this.ioRequest = ioRequest;
         this.ioResponse = null;
+        this.completionTime = completionTime;
     }
     
-    public CacheResponse(IoResponse ioResponse) {
+    public CacheResponse(IoResponse ioResponse, long completionTime) {
         this.ioRequest = null;
         this.ioResponse = ioResponse;
+        this.completionTime = completionTime;
     }
     
-    public CacheResponse(IoRequest ioRequest, IoResponse ioResponse) {
+    public CacheResponse(IoRequest ioRequest, IoResponse ioResponse, long completionTime) {
         this.ioRequest = ioRequest;
         this.ioResponse = ioResponse;
+        this.completionTime = completionTime;
     }
     
     public IoRequest getRequest() {
@@ -31,6 +36,10 @@ public class CacheResponse {
     
     public IoResponse getResponse() {
         return ioResponse;
+    }
+    
+    public long getCompletionTime() {
+        return completionTime;
     }
     
     @Override

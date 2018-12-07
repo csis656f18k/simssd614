@@ -39,7 +39,7 @@ public class DiskPerformanceSimulator {
 		presentResults();
 	}
 
-    // TODO: eventually allow user input for run count, disk types, etc.; for MVP, hard-code
+    // FUTURE: eventually allow user input for run count, disk types, etc.; for MVP, hard-code
 	private static void initializeSimulation () {
 		timer = new Timer();
 
@@ -62,18 +62,18 @@ public class DiskPerformanceSimulator {
 	}
 	
 	private static void createSystem() {
-		Disk disk = new Ssd(timer); // TODO: eventually allow configuring disk in system; for MVP, just use an SSD
+		Disk disk = new Ssd(timer); // FUTURE: eventually allow configuring disk in system; for MVP, just use an SSD
 
 		system = new System(timer, disk);
 	}
 	
 	private static void runSimulation() {
-//        system.setInitialDiskState();
-//        system.disableMemoization();
-//        results.add(runOneTrial());
+        system.setInitialDiskState();
+        system.disableMemoization();
+        results.add(runOneTrial());
         
-		system.setInitialDiskState();
-		system.enableMemoization();
+        system.setInitialDiskState();
+        system.enableMemoization();
         results.add(runOneTrial());
 	}
 
@@ -83,7 +83,8 @@ public class DiskPerformanceSimulator {
 	private static SingleTrialResult runOneTrial() {
 		while(isSomeOperationsStillOutstanding()) {
             Utils.debugPrint("");
-            Utils.debugPrint("Time is now " + timer.getTime());
+            Utils.debugPrint("Now starting time tick " + timer.getTime());
+            
 			system.updateTime();
 			
 			// Support multiple requests per time tick

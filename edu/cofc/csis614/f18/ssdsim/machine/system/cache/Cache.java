@@ -1,10 +1,8 @@
 package edu.cofc.csis614.f18.ssdsim.machine.system.cache;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -44,13 +42,15 @@ public class Cache {
     
     System system;
 	
-	// Sorted in ascending order, i.e. the element that hasn't been used in the longest time is first (index 0)
-	List<CacheItem> contents;
+	// The contents of the actual cache. Sorted in ascending order, i.e. the element that hasn't been used in the longest time is first (index 0)
+	CacheItem[] contents;
 	private int maxSize;
+	private int cacheSpacesUsed;
 	
 	int readLatency;
 	int writeLatency;
     
+	// Operations currently being done to the cache itself (e.g. saving a write request), organized by time of completion
     SortedMap<Long, Set<CacheResponse>> operationsInProgress;
     int operationsInProgressCount;
 	
@@ -58,8 +58,9 @@ public class Cache {
 	    this.timer = timer;
         this.system = system;
 	    
-	    contents = new ArrayList<CacheItem>();
+        cacheSpacesUsed = 0;
 	    maxSize = DiskPerformanceSimulator.DEBUG_MODE ? DEBUG_SIZE : DEFAULT_SIZE;
+        contents = new CacheItem[maxSize];
 	    
 	    readLatency = DiskPerformanceSimulator.DEBUG_MODE ? DEBUG_READ_LATENCY : DEFAULT_READ_LATENCY;
 	    writeLatency = DiskPerformanceSimulator.DEBUG_MODE ? DEBUG_WRITE_LATENCY : DEFAULT_WRITE_LATENCY;
@@ -95,13 +96,9 @@ public class Cache {
         
         operationsInProgressCount -= completedOperations.size();
         for(CacheResponse cr : completedOperations) {
-            // if going to disk, send to disk; otherwise, respond to system
-            IoRequest request = cr.getRequest();
+            // If this contains a request it just means the request has been written to cache; no action needed here
+            // If this contains a completed response, hand it back to the system
             IoResponse response = cr.getResponse();
-            
-            if(request != null) {
-              system.receiveIoRequestContinuingFromCache(request);
-            }
             if(response != null) {
               system.receiveCompletedIoOperationInfo(response);
             }
@@ -122,118 +119,124 @@ public class Cache {
 	    }
 	}
 
-	//FIXME ensure lastUpdatedTime updated correctly
     public void handleReadRequest(IoRequest request) {
+        // If cache is empty, hand the request off immediately
+        if(cacheSpacesUsed == 0) {
+            system.receiveIoRequestContinuingFromCache(request);
+            return;
+        }
+
+        // Otherwise, there is a cache; loop through it to see if the desired value is present
+        // If found, read from cache, and after cache read time, signal that the I/O request is complete
         int requestLatency = 0;
-        // Loop through the cache to see if the desired value is present
-        for(int i = contents.size() - 1; i >= 0; i--) {
+        long completionTime = -1;
+        for(int cacheIndex = maxSize - 1; cacheIndex >= maxSize - cacheSpacesUsed; cacheIndex--) {
             requestLatency += readLatency;
             
-            // If found, read from cache, and after the appropriate time interval, signal that the I/O request is complete
-            if(request.referencesSameMemory(contents.get(i).getRequest())) {
-                addInProgressCacheOperation(timer.getTime() + requestLatency, new CacheResponse(null, new IoResponse(request, timer.getTime() + requestLatency)));
+            if(request.referencesSameMemory(contents[cacheIndex].getRequest())) {
+                contents[cacheIndex].setLastReferencedTime(timer.getTime());
+                completionTime = timer.getTime() + requestLatency;
+                addInProgressCacheOperation(new CacheResponse(null, new IoResponse(request, completionTime), completionTime));
+                return;
             }
         }
 
-        // Otherwise, value isn't found anywhere in the cache, signal that the request needs to be handed off to disk
-        if(requestLatency == 0) {
-            // If the cache was empty, no time was spent looking through it; hand off directly
-            system.receiveIoRequestContinuingFromCache(request);
-        } else {
-            // Otherwise wait until the cache reading is complete, then hand off
-            addInProgressCacheOperation(timer.getTime() + requestLatency, new CacheResponse(request, null));
-        }
+        // At this point the entire cache has been searched and the value wasn't found; signal that the request needs to be handed off to disk after cache read time
+        completionTime = timer.getTime() + requestLatency;
+        addInProgressCacheOperation(new CacheResponse(request, null, completionTime));
     }
 
-    //FIXME confirm removal, not just read, of evicted req; i.e. drop it from operationsInProgress
     public void handleWriteRequest(IoRequest request) {
+        // When there is a cache, loop through it to see if the desired value is present
+        // If found, the old request is obsolete; replace it with the new one and silently drop the old one
         int requestLatency = 0;
-        
-        // Loop through the cache to see if the desired value is present
-        int cacheCurrentSize = contents.size();
-        for(int i = cacheCurrentSize - 1; i >= 0; i--) {
+        for(int cacheIndex = maxSize - 1; cacheIndex >= (maxSize - cacheSpacesUsed); cacheIndex--) {
+            IoRequest cachedRequest = contents[cacheIndex].getRequest();
             requestLatency += readLatency;
             
-            IoRequest cachedRequest = contents.get(i).getRequest();
-            
-            // If found, the old request is obsolete; replace it with the new one and silently drop the old one
             if(request.referencesSameMemory(cachedRequest)) {
-                addToCache(i, request);
-                //operationsInProgressCount++;
-                evict(request);
-
-                // FUTURE: might want to keep tracking evictions later, but current calculations don't use these data so it's a no-op for now
+                evict(cacheIndex);
+                addToCache(cacheIndex, request, requestLatency);
+                
+                return;
             }
         }
 
         // If the value isn't found anywhere in the cache, cache the new request
-        // If that caused an eviction, signal that it needs to be handed off to disk 
-        if(cacheCurrentSize == maxSize) {
-            IoRequest requestToEvict = contents.get(0).getRequest();
-            
-            addToCache(0, request);
-            requestLatency += writeLatency;
-            
-            evict(request);
-
-            //addInProgressCacheOperation(timer.getTime() + requestLatency, new CacheResponse(requestToEvict, null));
-        } else {
-            addToCache(cacheCurrentSize, request);
+        if(cacheSpacesUsed < maxSize) {
+            addToCache(0, request, requestLatency);
+            cacheSpacesUsed++;
+            return;
         }
+        
+        // At this point, the value wasn't found in the cache but the cache was full; need to evict least used and hand it off to disk before caching the new request
+        IoRequest evictedIoRequest = evict(0);
+        system.receiveIoRequestContinuingFromCache(evictedIoRequest);
+        addToCache(0, request, requestLatency);
     }
 	
-	private void addToCache(int index, IoRequest request) {
-	    contents.add(index, new CacheItem(request, timer.getTime()));
-	    addInProgressCacheOperation(timer.getTime() + writeLatency, new CacheResponse(request, null));
-	    Collections.sort(contents);
+	private void addToCache(int index, IoRequest request, int requestLatency) {
+	    contents[index] = new CacheItem(request, timer.getTime());
+	    Arrays.sort(contents, new CacheComparator());
+
+	    long completionTime = timer.getTime() + requestLatency + writeLatency;
+        addInProgressCacheOperation(new CacheResponse(request, null, completionTime));
 	}
 	
-	private void addInProgressCacheOperation(long completionTime, CacheResponse cr) {
-	    Set<CacheResponse> existingResponsesForCompletionTime = operationsInProgress.get(completionTime);
+	private void addInProgressCacheOperation(CacheResponse cr) {
+	    Set<CacheResponse> existingResponsesForCompletionTime = operationsInProgress.get(cr.getCompletionTime());
         if(existingResponsesForCompletionTime == null) {
             Set<CacheResponse> newSet = new HashSet<CacheResponse>();
             newSet.add(cr);
-            operationsInProgress.put(completionTime, newSet);
+            operationsInProgress.put(cr.getCompletionTime(), newSet);
         } else {
             existingResponsesForCompletionTime.add(cr);
         }
         operationsInProgressCount++;
 	}
-	
-	/*
-	 * This removes the marker representing the given request from the list of operations in progress
-	 * 
-	 * Pre-condition: the cache itself has already been updated with the new value; this method is about ONLY operationsInProgress
-	 * 
-	 * This method will decrement operationsInProgressCount, so the counter must be actively incremented elsewhere to maintain the proper value.
-	 * 
-	 * @param request an IoRequest referencing the same memory location on disk as the request to evict 
-	 */
-	private void evict(IoRequest request) {
-	    CacheResponse crToEvict = null;
-        Set<CacheResponse> containingSet = null;
+
+    // FUTURE: might want to somehow track evictions later
+	private IoRequest evict(int indexToEvict) {
+	    IoRequest evictedIoRequest = contents[indexToEvict].getRequest();
 	    
-	    Set<Long> completionTimes = operationsInProgress.keySet();
-	    outerLoop:
-	    for(long time : completionTimes) {
-	        Set<CacheResponse> crs = operationsInProgress.get(time);
-	        for(CacheResponse cr : crs) {
-	            if(request.referencesSameMemory(cr.getRequest())) {
-	                containingSet = crs;
-	                crToEvict = cr;
-	                break outerLoop;
-	            }
-	        }
-	    }
+	    // Evictee may still be in progress; loop through in-progress ops to check, and if found, drop it
+        Set<Long> inProgressKeys = operationsInProgress.keySet();
+        outerLoop:
+        for(long key : inProgressKeys) {
+            Set<CacheResponse> crSet = operationsInProgress.get(key);
+            for(CacheResponse cr : crSet) {
+                if(evictedIoRequest.referencesSameMemory(cr.getRequest())) {
+                    crSet.remove(cr);
+                    operationsInProgressCount--;
+                    break outerLoop;
+                }
+            }
+        }
 	    
-        // TODO if this block isn't entered it's kind of an error, implement an exception later 
-	    if(crToEvict != null) {
-	        containingSet.remove(crToEvict);
-	        operationsInProgressCount--;
-	    }
+	    contents[indexToEvict] = null;
+	    
+	    return evictedIoRequest;
 	}
 	
 	public boolean isOperationsQueued() {
 	    return operationsInProgressCount > 0;
 	}
+	
+	// A null-friendly comparator to use with the cache
+	class CacheComparator implements Comparator<CacheItem> {
+        @Override
+        public int compare(CacheItem o1, CacheItem o2) {
+            if (o1 == null && o2 == null) {
+                return 0;
+            }
+            if (o1 == null) {
+                return -1;
+            }
+            if (o2 == null) {
+                return 1;
+            }
+            
+            return o1.compareTo(o2);
+        }
+    }
 }

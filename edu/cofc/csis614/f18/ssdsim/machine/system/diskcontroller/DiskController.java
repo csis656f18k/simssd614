@@ -18,8 +18,6 @@ public abstract class DiskController {
 	
 	public void updateTime() {
         disk.updateTime();
-        
-        // TODO: do anything that happens here at time timeIn
 	}
 	
 	public abstract void setInitialDiskState();
