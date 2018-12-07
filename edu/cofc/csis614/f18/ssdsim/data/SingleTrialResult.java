@@ -22,12 +22,9 @@ public class SingleTrialResult {
     public long getTimeTakenOverall() {
         return timeTaken;
     }
-
-    public long getTimeTakenForReads() {
-        return -1;//FIXME
-    }
-
-    public long getTimeTakenForWrites() {
-        return -1;//FIXME
+    
+    @Override
+    public String toString() {
+        return "Time taken for trial: " + timeTaken;
     }
 }

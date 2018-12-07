@@ -34,8 +34,9 @@ public class DiskPerformanceSimulator {
     static List<SingleTrialResult> results;
 
 	public static void main(String[] args) {
-		initializeSimulation();
-		runSimulation();
+        results = new ArrayList<SingleTrialResult>();
+
+        runSimulation();
 		presentResults();
 	}
 
@@ -47,8 +48,6 @@ public class DiskPerformanceSimulator {
 
         requests = new LinkedList<IoRequest>();
 		populateRequests();
-		
-		results = new ArrayList<SingleTrialResult>();
 	}
 	
 	private static void populateRequests() {
@@ -68,10 +67,12 @@ public class DiskPerformanceSimulator {
 	}
 	
 	private static void runSimulation() {
+        initializeSimulation();
         system.setInitialDiskState();
         system.disableMemoization();
         results.add(runOneTrial());
         
+        initializeSimulation();
         system.setInitialDiskState();
         system.enableMemoization();
         results.add(runOneTrial());
@@ -109,9 +110,13 @@ public class DiskPerformanceSimulator {
     }
 	
 	private static void presentResults() {
+        java.lang.System.out.println("");
+        java.lang.System.out.println("----------");
+        java.lang.System.out.println("Results:");
+        java.lang.System.out.println("");
 	    int numTrials = results.size();
 		for(int i = 0; i < numTrials; i++) {
-            java.lang.System.out.println("Results for trial " + (i + 1) + ":");
+            java.lang.System.out.println("Trial " + (i + 1) + ":");
             java.lang.System.out.println(results.get(i).getTimeTakenOverall() + " ns");
             java.lang.System.out.println();
 		}

@@ -14,4 +14,9 @@ public class Timer {
 	public long getTime() {
 	    return currentTime;
 	}
+    
+    @Override
+    public String toString() {
+        return "Current time: " + currentTime;
+    }
 }

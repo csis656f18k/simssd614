@@ -102,7 +102,7 @@ public class Ssd extends Disk {
 //		    return;
 //		}
 		
-//		doGarbageCollection();//FIXME restore this
+//		doGarbageCollection();//FIXME restore
 	}
 
 	@Override
@@ -119,21 +119,14 @@ public class Ssd extends Disk {
         }
 	}
 	
-	/*
 	private void doGarbageCollection() {
-		SsdBlock emptyBlock = null;
-		for(SsdBlock block : blocks) {
-			if(block.readyToBeWritten()) {
-				emptyBlock = block;
-				break;
-			}
-		}
+		SsdBlock emptyBlock = findRandomEmptyBlock();
 		if(emptyBlock == null) {
 		    return;
 		}
 		
 		blocked = true;
-		unblockTime = timer.getTime() + DiskConstants.SSD_TLC.getEraseLatency();
+		unblockTime = timer.getTime() + eraseLatency;
 		
 		SsdBlock staleBlock = null;
 		for(SsdBlock block : blocks) {
@@ -141,13 +134,14 @@ public class Ssd extends Disk {
 				continue;
 			}
 			
+			// For all blocks containing any stale pages, copy any useful data to a free block and then wipe the stale block
 			staleBlock = block;
-			for(int i = 0; i < pagesPerBlock; i++) {
-				SsdPage page = staleBlock.pages.get(i);
+			for(int pageIndex = 0; pageIndex < pagesPerBlock; pageIndex++) {
+				SsdPage page = staleBlock.pages.get(pageIndex);
 				if(page.status == SsdPageStatus.IN_USE) {
-					emptyBlock.pages.get(i).status = SsdPageStatus.IN_USE;
+					emptyBlock.pages.get(pageIndex).status = SsdPageStatus.IN_USE;
 				} else {
-					emptyBlock.pages.get(i).status = SsdPageStatus.AVAILABLE;
+					emptyBlock.pages.get(pageIndex).status = SsdPageStatus.AVAILABLE;
 				}
 				
 				page.status = SsdPageStatus.AVAILABLE;
@@ -156,7 +150,16 @@ public class Ssd extends Disk {
 			emptyBlock = staleBlock;
 		}
 	}
-	*/
+	
+	private SsdBlock findRandomEmptyBlock() {
+        for(SsdBlock block : blocks) {
+            if(block.readyToBeWritten()) {
+                return block;
+            }
+        }
+        
+        return null;
+	}
 
 	@Override
 	public void processIoRequest(IoRequest requestIn) {
