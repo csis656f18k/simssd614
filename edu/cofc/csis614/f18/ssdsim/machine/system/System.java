@@ -91,4 +91,28 @@ public class System {
 	public Set<IoResponse> getIoResponses() {
 	    return responses;
 	}
+    
+    public int getCacheReadLatency() {
+        return cache.getReadLatency();
+    }
+    
+    public int getCacheWriteLatency() {
+        return cache.getWriteLatency();
+    }
+    
+    public int getDiskReadLatency() {
+        return controller.getReadLatency();
+    }
+    
+    public int getDiskWriteLatency() {
+        return controller.getWriteLatency();
+    }
+    
+    public int getDiskEraseLatency() {
+        return controller.getEraseLatency();
+    }
+    
+    public int getDiskSeekLatency() {
+        return controller.getSeekLatency();
+    }
 }

@@ -308,6 +308,22 @@ public class Ssd extends Disk {
 	    
 	    return totalLatency;
 	}
+    
+    public int getReadLatency() {
+        return readLatency;
+    }
+    
+    public int getWriteLatency() {
+        return writeLatency;
+    }
+    
+    public int getEraseLatency() {
+        return eraseLatency;
+    }
+    
+    public int getSeekLatency() {
+        return seekLatency;
+    }
 	
 	//////////
 	
