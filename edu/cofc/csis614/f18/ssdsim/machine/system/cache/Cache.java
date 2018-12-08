@@ -10,6 +10,7 @@ import java.util.TreeMap;
 import edu.cofc.csis614.f18.ssdsim.DiskPerformanceSimulator;
 import edu.cofc.csis614.f18.ssdsim.Utils;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequest;
+import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoRequestType;
 import edu.cofc.csis614.f18.ssdsim.machine.ioop.IoResponse;
 import edu.cofc.csis614.f18.ssdsim.machine.system.System;
 import edu.cofc.csis614.f18.ssdsim.machine.system.disk.DiskConstants;
@@ -30,7 +31,7 @@ import edu.cofc.csis614.f18.ssdsim.timer.Timer;
 public class Cache {
 	public static final int DEBUG_SIZE = 2;
 	
-	public static final int DEFAULT_SIZE = 500;
+	public static final int DEFAULT_SIZE = 50; // Was briefly 500
 
     public static final int DEBUG_READ_LATENCY = 1;
     public static final int DEBUG_WRITE_LATENCY = 2;
@@ -68,6 +69,14 @@ public class Cache {
         operationsInProgress = new TreeMap<Long, Set<CacheResponse>>();
         operationsInProgressCount = 0;
 	}
+    
+    public int getReadLatency() {
+        return readLatency;
+    }
+    
+    public int getWriteLatency() {
+        return writeLatency;
+    }
 
     /**
      * This gets run at the start of every time tick.
@@ -96,11 +105,17 @@ public class Cache {
         
         operationsInProgressCount -= completedOperations.size();
         for(CacheResponse cr : completedOperations) {
-            // If this contains a request it just means the request has been written to cache; no action needed here
+            // If this contains a write request it just means the request has been written to cache; no action needed here
+            // If this contains a read request it looked in cache but failed; needs to be passed on to disk
+            IoRequest request = cr.getRequest();
+            if(request != null && request.getType() == IoRequestType.READ) {
+                system.receiveIoRequestContinuingFromCache(request);
+            }
+            
             // If this contains a completed response, hand it back to the system
             IoResponse response = cr.getResponse();
             if(response != null) {
-              system.receiveCompletedIoOperationInfo(response);
+                system.receiveCompletedIoOperationInfo(response);
             }
         }
     }
