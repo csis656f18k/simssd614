@@ -3,7 +3,6 @@ package edu.cofc.csis614.f18.ssdsim;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 
@@ -25,12 +24,14 @@ import edu.cofc.csis614.f18.ssdsim.timer.Timer;
 public class DiskPerformanceSimulator {
     public static final boolean DEBUG_MODE = false;
     
+    private static final int NUM_REQUESTS = 1000;
+    
     private static Timer timer;
 	
 	static System system;
 	static Disk diskToTest;
 	
-	static Queue<IoRequest> requests;
+	static List<IoRequest> requests;
 
     static List<SingleTrialResult> results;
 
@@ -61,7 +62,7 @@ public class DiskPerformanceSimulator {
         Random rng = new Random();
         long highestTimeSoFar = 0;
 
-        for(int i = 0; i < 1000; i++) {
+        for(int i = 0; i < NUM_REQUESTS; i++) {
             IoRequestType type = generateTypeForRequest(rng);
             long block = generateBlockForRequest(rng);
             int page = generatePageForRequest(rng);
@@ -134,21 +135,29 @@ public class DiskPerformanceSimulator {
 	 * Simulate a single disk on a single system, with some number of file operations, one time.
 	 */
 	private static SingleTrialResult runOneTrial() {
-		while(isSomeOperationsStillOutstanding()) {
+	    int requestCounter = 0;
+	    
+		while(isSomeOperationsStillOutstanding(requestCounter)) {
+		    // Just debug statements
             Utils.debugPrint("");
             Utils.debugPrint("Now starting time tick " + timer.getTime());
 
+            // Super janky progress spinner
             if(timer.getTime() % 250000 == 0) {
                 java.lang.System.out.println(timer.getTime() + " / ~6,000,000");
             }
             
+            // The actual logic starts here. This is the top of a new time tick.
+            // First, handle pending stuff
 			system.updateTime();
 			
-			// Support multiple requests per time tick
-			while(requests.peek() != null && requests.peek().getStartTime() == timer.getTime()) {
-                system.handleIoRequest(requests.remove());
-            }
+			// Then, accept any new request(s) for this time tick
+		    while(requestCounter < NUM_REQUESTS && requests.get(requestCounter).getStartTime() == timer.getTime()) {
+                system.handleIoRequest(requests.get(requestCounter));
+                requestCounter++;
+		    }
 			
+		    // Finally, the time tick is over, advance to the next
 			timer.stepForward();
 		}
 		
@@ -157,8 +166,8 @@ public class DiskPerformanceSimulator {
 		return new SingleTrialResult(rawData);
 	}
 
-	private static boolean isSomeOperationsStillOutstanding() {
-	    if(!requests.isEmpty()) {
+	private static boolean isSomeOperationsStillOutstanding(int requestCounter) {
+	    if(requestCounter < NUM_REQUESTS) {
 	        return true;
 	    }
 	    
