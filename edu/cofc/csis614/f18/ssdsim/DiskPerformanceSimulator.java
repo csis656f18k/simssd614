@@ -36,6 +36,9 @@ public class DiskPerformanceSimulator {
 
 	public static void main(String[] args) {
 	    long startTime = java.lang.System.currentTimeMillis();
+
+        requests = new LinkedList<IoRequest>();
+        populateRequests();
 	    
         results = new ArrayList<SingleTrialResult>();
 
@@ -52,9 +55,6 @@ public class DiskPerformanceSimulator {
 		timer = new Timer();
 
         createSystem();
-
-        requests = new LinkedList<IoRequest>();
-		populateRequests();
 	}
 	
 	private static void populateRequests() {
